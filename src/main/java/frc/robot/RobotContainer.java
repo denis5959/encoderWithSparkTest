@@ -12,7 +12,13 @@ import frc.robot.Commands.intakePositionTwo;
 import frc.robot.Commands.SpinUpShooter;
 import frc.robot.Subsystem.intakeSubsystem;
 import frc.robot.Subsystem.ShooterSubsystem;
+import frc.robot.Subsystem.LedSubsystem;   // <-- AGREGAR
+import frc.robot.Commands.RainbowLed;     
 
+
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class RobotContainer {
 
@@ -23,10 +29,17 @@ public class RobotContainer {
   ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   SpinUpShooter spinUpShooter = new SpinUpShooter(shooterSubsystem);
 
+  LedSubsystem ledSubsystem = new LedSubsystem();     
+  RainbowLed rainbowLed = new RainbowLed(ledSubsystem);
   private final CommandPS4Controller CommandPS4Controller = new CommandPS4Controller(1);
+  private final NetworkTableEntry ledToggleEntry = NetworkTableInstance.getDefault()
+      .getTable("SmartDashboard")
+      .getEntry("Rainbow Toggle");
 
   public RobotContainer() {
+    ledToggleEntry.setBoolean(false); // Initialize the toggle to false
     configureBindings();
+    rainbowLed.schedule();
   }
 
   private void configureBindings() {
@@ -35,6 +48,11 @@ public class RobotContainer {
     
     // D-pad up: Spin up shooter while held, stop when released
     CommandPS4Controller.povUp().whileTrue(spinUpShooter);
+
+    Trigger rainbowTrigger = new Trigger(() -> ledToggleEntry.getBoolean(false));
+
+    rainbowTrigger.onTrue(Commands.runOnce(() -> ledSubsystem.setRainbow(), ledSubsystem));
+    rainbowTrigger.onFalse(Commands.runOnce(() -> ledSubsystem.setRed(), ledSubsystem));
   }
 
   public Command getAutonomousCommand() {
